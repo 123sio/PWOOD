@@ -1,0 +1,278 @@
+angle_version = 'le90'
+
+import torchvision.transforms as transforms
+from copy import deepcopy
+
+# model settings
+detector = dict(
+    type='SemiPoint2RBoxV2',
+    ss_prob=[0.68, 0.07, 0.25],
+    backbone=dict(
+        type='ResNet',
+        depth=50,
+        num_stages=4,
+        out_indices=(1, 2, 3),
+        frozen_stages=1,
+        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_eval=True,
+        style='pytorch',
+        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')),
+    neck=dict(
+        type='FPN',
+        in_channels=[512, 1024, 2048],
+        out_channels=128,
+        start_level=0,
+        add_extra_convs='on_output',
+        num_outs=3,
+        relu_before_extra_convs=True),
+    bbox_head=dict(
+        type='SemiPoint2RBoxV2Head',
+        num_classes=15,
+        in_channels=128,
+        feat_channels=128,
+        strides=[8],
+        voronoi_type='standard',
+        voronoi_thres=dict(
+            default=[0.994, 0.005],
+            override=(([2, 11], [0.999, 0.6]),
+                    ([7, 8, 10, 14], [0.95, 0.005]))),
+        square_cls=[1, 9, 11],
+        edge_loss_cls=[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 13],
+        post_process={11: 1.2},
+        angle_coder=dict(
+            type='PSCCoder',
+            angle_version='le90',
+            dual_freq=False,
+            num_step=3,
+            thr_mod=0),
+        loss_cls=dict(
+            type='mmdet.FocalLoss',
+            use_sigmoid=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=1.0),
+        loss_bbox=dict(type='mmdet.L1Loss', loss_weight=0.05),
+        loss_overlap=dict(
+            type='GaussianOverlapLoss', loss_weight=10.0, lamb=0),
+        loss_voronoi=dict(
+            type='GaussianVoronoiLoss', loss_weight=5.0),
+        loss_bbox_edg=dict(
+            type='EdgeLoss', loss_weight=0.3),
+        loss_bbox_syn=dict(
+            type='RotatedIoULoss', loss_weight=1.0),
+        loss_ss=dict(
+            type='mmdet.SmoothL1Loss', loss_weight=1.0, beta=0.1)),
+    # training and testing settings
+    train_cfg=None,
+    test_cfg=dict(
+        nms_pre=2000,
+        min_bbox_size=0,
+        score_thr=0.05,
+        nms=dict(iou_thr=0.1),
+        max_per_img=2000))
+
+model = dict(
+    type="MCLTeacher",
+    model=detector,
+    semi_loss=dict(type='RotatedMCLLoss2', cls_channels=15),
+    train_cfg=dict(
+        iter_count=0,
+        burn_in_steps=188000,
+        sup_weight=1.0,
+        unsup_weight=1.0,
+        weight_suppress="linear",
+        logit_specific_weights=dict(),
+    ),
+    test_cfg=dict(inference_on="teacher"), 
+)
+
+find_unused_parameters=True
+
+img_norm_cfg = dict(
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+common_pipeline = [
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='Pad', size_divisor=32),
+    dict(type='DefaultFormatBundle'),
+    dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels'],
+         meta_keys=('filename', 'ori_filename', 'ori_shape',
+                    'img_shape', 'pad_shape', 'scale_factor', 'flip',
+                    'flip_direction', 'img_norm_cfg', 'tag')
+         )
+]
+strong_pipeline = [
+    dict(type='DTToPILImage'),
+    dict(type='DTRandomApply', operations=[transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
+    dict(type='DTRandomGrayscale', p=0.2),
+    dict(type='DTRandomApply', operations=[
+        dict(type='DTGaussianBlur', rad_range=[0.1, 2.0])
+    ]),
+    # dict(type='DTRandCrop'),
+    dict(type='DTToNumpy'),
+    dict(type="ExtraAttrs", tag="unsup_strong"),
+]
+weak_pipeline = [
+    # dict(type='LoadImageFromFile'),
+    # dict(type='LoadAnnotations', with_bbox=True),
+    dict(type='RResize', img_scale=(1024, 1024)),
+    dict(
+        type='RRandomFlip',
+        flip_ratio=[0.25, 0.25, 0.25],
+        direction=['horizontal', 'vertical', 'diagonal'],
+        version=angle_version),
+    dict(type="ExtraAttrs", tag="unsup_weak"),
+]
+unsup_pipeline = [
+    dict(type="LoadImageFromFile"),
+    # dict(type="LoadAnnotations", with_bbox=True),
+    # generate fake labels for data format compatibility
+    dict(type="LoadEmptyAnnotations", with_bbox=True),
+    dict(type="STMultiBranch", unsup_strong=deepcopy(strong_pipeline), unsup_weak=deepcopy(weak_pipeline),
+         common_pipeline=common_pipeline, is_seq=True), 
+]
+sup_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', with_bbox=True),
+    dict(type='ConvertWeakSupervision', point_proportion=1., hbox_proportion=0),
+    dict(type='RResize', img_scale=(1024, 1024)),
+    dict(
+        type='RRandomFlip',
+        flip_ratio=[0.25, 0.25, 0.25],
+        direction=['horizontal', 'vertical', 'diagonal'],
+        version=angle_version),
+    dict(type="ExtraAttrs", tag="sup_weak"),
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='Pad', size_divisor=32),
+    dict(type='DefaultFormatBundle'),
+    dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels'],
+         meta_keys=('filename', 'ori_filename', 'ori_shape',
+                    'img_shape', 'pad_shape', 'scale_factor', 'flip',
+                    'flip_direction', 'img_norm_cfg', 'tag')
+         )
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(1024, 1024),
+        flip=False,
+        transforms=[
+            dict(type='RResize'),
+            dict(type='Normalize', **img_norm_cfg),
+            dict(type='Pad', size_divisor=32),
+            dict(type='DefaultFormatBundle'),
+            dict(type='Collect', keys=['img'])
+        ])
+]
+
+dataset_type = 'DOTADataset'   
+classes = ('plane', 'baseball-diamond', 'bridge', 'ground-track-field',
+               'small-vehicle', 'large-vehicle', 'ship', 'tennis-court',
+               'basketball-court', 'storage-tank', 'soccer-ball-field',
+               'roundabout', 'harbor', 'swimming-pool', 'helicopter')
+data = dict(
+    samples_per_gpu=3,
+    workers_per_gpu=5,
+    train=dict(
+        type="SemiDataset",
+        sup=dict(
+            type=dataset_type,
+            ann_file="dotav1/train_30p_labeled/annfiles/",
+            img_prefix="dotav1/train_30p_labeled/images/",
+            classes=classes,
+            pipeline=sup_pipeline,
+        ),
+        unsup=dict(
+            type=dataset_type,
+            ann_file="dotav1/train_30p_unlabeled/annfiles/",
+            img_prefix="dotav1/train_30p_unlabeled/images/",
+            classes=classes,
+            pipeline=unsup_pipeline,
+            filter_empty_gt=False,
+        ),
+    ),
+    val=dict(
+        type=dataset_type,
+        img_prefix="dota1_0/val1/images/",
+        ann_file='dota1_0/val1/annfiles/',
+        classes=classes,
+        pipeline=test_pipeline
+    ),
+    test=dict(
+        type=dataset_type,
+        img_prefix="dota1_0/test/images/",
+        ann_file='dota1_0/test/annfiles/',
+        classes=classes,
+        pipeline=test_pipeline,
+    ),
+    sampler=dict(
+        train=dict(
+            type="MultiSourceSampler",
+            sample_ratio=[2, 1],
+            seed=42
+        )
+    ),
+)
+
+custom_hooks = [
+    dict(type="NumClassCheckHook"),
+    dict(type="WeightSummary"),
+    dict(type="MeanTeacher", momentum=0, interval=1, start_steps=3200),
+]
+
+# evaluation
+evaluation = dict(type="SubModulesDistEvalHook", interval=3200, metric='mAP',
+                  save_best='mAP')
+
+# optimizer
+# optimizer = dict(type='SGD', lr=0.00025, momentum=0.9, weight_decay=0.0001)
+# optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+
+optimizer=dict(
+    type='AdamW',
+    # lr=0.00005,
+    lr=0.0001,
+    betas=(0.9, 0.999),
+    weight_decay=0.05)
+optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+
+# learning policy
+lr_config = dict(
+    policy='step',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=1.0 / 3,
+    step=[120000, 160000])
+# 120k iters is enough for DOTA
+runner = dict(type="IterBasedRunner", max_iters=180000)
+checkpoint_config = dict(by_epoch=False, interval=3200, max_keep_ckpts=1)
+
+# Default: disable fp16 training
+# fp16 = dict(loss_scale="dynamic")
+
+log_config = dict(
+    _delete_=True,
+    interval=50,
+    hooks=[
+        dict(type="TextLoggerHook"),
+        # dict(
+        #     type="WandbLoggerHook",
+        #     init_kwargs=dict(
+        #         project="rotated_DenseTeacher_10percent",
+        #         name="default_bce4cls",
+        #     ),
+        #     by_epoch=False,
+        # ),
+    ],
+)
+
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+load_from = None
+resume_from = None
+workflow = [('train', 1)]   # mode, iters
+
+# disable opencv multithreading to avoid system being overloaded
+opencv_num_threads = 0
+# set multi-process start method as `fork` to speed up the training
+mp_start_method = 'fork'
