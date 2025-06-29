@@ -126,7 +126,7 @@ def main():
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
 
-    cfg.model.pretrained = None
+    #cfg.model.pretrained = None
     if cfg.model.get('neck'):
         if isinstance(cfg.model.neck, list):
             for neck_cfg in cfg.model.neck:
