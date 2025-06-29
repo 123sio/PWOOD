@@ -44,7 +44,7 @@ Labeled Data | mAP | Config | Model | Log |
 | 30% | 65.42 | [semi_h2rv2_adamw_dotav1_30p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/dotav1/semi_h2rv2_adamw_dotav1_30p.py) | [best_0.654153_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dota1_0/30p/best_0.654153_mAP.pth) | [dotav1_30p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dota1_0/30p/20250310_193742.log.json) | 
 
 ### DOTA- v1.5
- Labeled Data | mAP | Config | Model | Log |
+Labeled Data | mAP | Config | Model | Log |
 | :-----------: | :--: |:-----: | :----: | :-----:|
 | 10% | 52.87 | [semi_h2rv2_adamw_dota15_10p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/semi_h2rv2_adamw_dota15_10p.py) | [best_0.528748_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/gmm/10p_lr/best_0.528748_mAP.pth) | - | 
 | 20% | 59.36 | [semi_h2rv2_adamw_dota15_20p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/semi_h2rv2_adamw_dota15_20p.py) | [best_0.593614_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/gmm/best_0.593614_mAP.pth) | [dotav15_20p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/gmm/20250217_202030.log.json) | 
@@ -52,7 +52,7 @@ Labeled Data | mAP | Config | Model | Log |
 
 
 ### DIOR
- Labeled Data | mAP | Config | Model | Log |
+Labeled Data | mAP | Config | Model | Log |
 | :-----------: | :--: |:-----: | :----: | :-----:|
 | 10% | 54.33 | [semi_h2rv2_adamw_dior_10p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/dior/semi_h2rv2_adamw_dior_10p.py) | [best_0.543296_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dior/gmm/10p/best_0.543296_mAP.pth) | [doir_10p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dior/gmm/10p/20250227_202752.log.json) | 
 | 20% | 57.89 | [semi_h2rv2_adamw_dior_20p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/dior/semi_h2rv2_adamw_dior_20p.py) | [best_0.578923_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dior/gmm/20p/best_0.578923_mAP.pth) | [dior_20p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dior/gmm/20p/20250227_205200.log.json) | 
