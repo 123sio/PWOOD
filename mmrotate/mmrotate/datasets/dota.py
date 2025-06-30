@@ -169,7 +169,7 @@ class DOTADataset(CustomDataset):
                  proposal_nums=(100, 300, 1000),
                  iou_thr=0.5,
                  scale_ranges=None,
-                 nproc=4):
+                 nproc=1):
         """Evaluate the dataset.
 
         Args:
@@ -213,7 +213,7 @@ class DOTADataset(CustomDataset):
 
         return eval_results
 
-    def merge_det(self, results, nproc=4):
+    def merge_det(self, results, nproc=1):
         """Merging patch bboxes into full image.
 
         Args:
@@ -315,7 +315,7 @@ class DOTADataset(CustomDataset):
 
         return files
 
-    def format_results(self, results, submission_dir=None, nproc=4, **kwargs):
+    def format_results(self, results, submission_dir='work_dir/submission_result', nproc=1, **kwargs):
         """Format the results to submission text (standard format for DOTA
         evaluation).
 

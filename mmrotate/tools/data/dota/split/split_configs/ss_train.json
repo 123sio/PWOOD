@@ -1,10 +1,10 @@
 {
   "nproc": 10,
   "img_dirs": [
-    "data/DOTA/train/images/"
+    "/home/user/Data/DOTA/train_20p_unlabeled/"
   ],
   "ann_dirs": [
-    "data/DOTA/train/labelTxt/"
+    "/home/user/Data/DOTA/train/labelTxt-v1.5/"
   ],
   "sizes": [
     1024
@@ -23,6 +23,6 @@
     116,
     124
   ],
-  "save_dir": "data/split_ss_dota/train/",
+  "save_dir": "data/split_ss_dota/train_20p_unlabeled/",
   "save_ext": ".png"
 }

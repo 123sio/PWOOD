@@ -183,6 +183,7 @@ mmrotate/core/visualization/palette.py
 mmrotate/datasets/__init__.py
 mmrotate/datasets/builder.py
 mmrotate/datasets/dota.py
+mmrotate/datasets/dronevehicle.py
 mmrotate/datasets/hrsc.py
 mmrotate/datasets/sar.py
 mmrotate/datasets/pipelines/__init__.py

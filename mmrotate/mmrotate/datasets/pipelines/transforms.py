@@ -6,6 +6,7 @@ import mmcv
 import numpy as np
 import torch
 from mmcv.ops import box_iou_rotated
+from mmcv.parallel import DataContainer as DC
 from mmdet.datasets.pipelines.transforms import (Mosaic, RandomCrop,
                                                  RandomFlip, Resize)
 from numpy import random
@@ -28,12 +29,13 @@ class RResize(Resize):
     def __init__(self,
                  img_scale=None,
                  multiscale_mode='range',
-                 ratio_range=None):
+                 ratio_range=None,
+                 keep_ratio=True):
         super(RResize, self).__init__(
             img_scale=img_scale,
             multiscale_mode=multiscale_mode,
             ratio_range=ratio_range,
-            keep_ratio=True)
+            keep_ratio=keep_ratio)#############
 
     def _resize_bboxes(self, results):
         """Resize bounding boxes with ``results['scale_factor']``."""
@@ -562,6 +564,30 @@ class RMosaic(Mosaic):
         return bboxes[valid_inds], labels[valid_inds]
 
 
+def obb2hbb(rbboxes):
+    """Convert oriented bounding boxes to horizontal bounding boxes.
+
+    Args:
+        obbs (torch.Tensor): [x_ctr,y_ctr,w,h,angle]
+
+    Returns:
+        hbbs (torch.Tensor): [x_ctr,y_ctr,w,h,pi/2]
+    """
+    w = rbboxes[:, 2::5]
+    h = rbboxes[:, 3::5]
+    a = rbboxes[:, 4::5]
+    cosa = np.cos(a)
+    sina = np.sin(a)
+    hbbox_w = cosa * w + sina * h
+    hbbox_h = sina * w + cosa * h
+    hbboxes = np.zeros_like(rbboxes)
+    hbboxes[:, 0::5] = rbboxes[:, 0::5]
+    hbboxes[:, 1::5] = rbboxes[:, 1::5]
+    hbboxes[:, 2::5] = hbbox_w
+    hbboxes[:, 3::5] = hbbox_h
+    return hbboxes
+
+
 @ROTATED_PIPELINES.register_module()
 class ConvertWeakSupervision():
     """Convert RBoxes to Single Center Points."""
@@ -570,16 +596,18 @@ class ConvertWeakSupervision():
         return self.transform(results)
 
     def __init__(self, 
-                 point_proportion = 0.3,
-                 hbox_proportion = 0.3, 
-                 point_dummy = 0.1,
-                 hbox_dummy = 0):
+                 point_proportion: float = 0.3,
+                 hbox_proportion: float = 0.3, 
+                 point_dummy: float = 1,
+                 hbox_dummy: float = 0,
+                 modify_labels: bool = False) -> None:
         self.point_proportion = point_proportion
         self.hbox_proportion = hbox_proportion
         self.point_dummy = point_dummy
         self.hbox_dummy = hbox_dummy
+        self.modify_labels = modify_labels
 
-    def transform(self, results):
+    def transform(self, results: dict) -> dict:
         """The transform function."""
 
         max_idx_p = int(round(results['gt_bboxes'].shape[0] * self.point_proportion))
@@ -588,12 +616,343 @@ class ConvertWeakSupervision():
         results['gt_bboxes'][:max_idx_p, 4] = 0
 
         max_idx_h = max_idx_p + int(round(results['gt_bboxes'].shape[0] * self.hbox_proportion))
-        results['gt_bboxes'][max_idx_p:max_idx_h] = \
-            results['gt_bboxes'][max_idx_p:max_idx_h]
+        results['gt_bboxes'][max_idx_p:max_idx_h] = obb2hbb(results['gt_bboxes'][max_idx_p:max_idx_h])
         results['gt_bboxes'][max_idx_p:max_idx_h, 4] = self.hbox_dummy
 
-        results['ws_types'] = torch.zeros(results['gt_bboxes'].shape[0], dtype=torch.long)
-        results['ws_types'][:max_idx_p] = 2
-        results['ws_types'][max_idx_p:max_idx_h] = 1
+        if self.modify_labels:
+            labels = results['gt_labels']
+            ws_types = np.zeros_like(labels)
+            ws_types[:max_idx_p] = 2
+            ws_types[max_idx_p:max_idx_h] = 1
+            results['gt_labels'] = np.stack((labels, ws_types), -1)
 
         return results
+        
+@ROTATED_PIPELINES.register_module()
+class ConvertWeakSupervision1():
+    """Convert RBoxes to Single Center Points."""
+
+    def __call__(self, results):
+        return self.transform(results)
+
+    def __init__(self,
+                 point_proportion: float = 0.3,
+                 hbox_proportion: float = 0.3,
+                 point_dummy: float = 1,
+                 hbox_dummy: float = 0,
+                 modify_labels: bool = False,
+                 version='le90') -> None:
+        self.point_proportion = point_proportion
+        self.hbox_proportion = hbox_proportion
+        self.point_dummy = point_dummy
+        self.hbox_dummy = hbox_dummy
+        self.modify_labels = modify_labels
+        self.version = version
+
+    def transform(self, results: dict) -> dict:
+        """The transform function."""
+
+        max_idx_p = int(round(results['gt_bboxes'].shape[0] * self.point_proportion))
+        results['gt_bboxes'][:max_idx_p, 2] = self.point_dummy
+        results['gt_bboxes'][:max_idx_p, 3] = self.point_dummy
+        results['gt_bboxes'][:max_idx_p, 4] = 0
+
+        from mmrotate.core.bbox.transforms import obb2hbb
+
+        max_idx_h = max_idx_p + int(round(results['gt_bboxes'].shape[0] * self.hbox_proportion))
+        max_idx_h = min(max_idx_h, results['gt_bboxes'].shape[0])
+        results['gt_bboxes'][max_idx_p:max_idx_h] = obb2hbb(torch.from_numpy(results['gt_bboxes'][max_idx_p:max_idx_h]),
+                                                            version=self.version).numpy()
+        #results['gt_bboxes'][max_idx_p:max_idx_h, 4] = self.hbox_dummy
+
+        if self.modify_labels:
+            labels = results['gt_labels']
+            ws_types = np.zeros_like(labels)
+            ws_types[:max_idx_p] = 2
+            ws_types[max_idx_p:max_idx_h] = 1
+            results['gt_labels'] = np.stack((labels, ws_types), -1)
+
+        return results
+    
+def to_tensor(data):
+    """Convert objects of various python types to :obj:`torch.Tensor`.
+
+    Supported types are: :class:`numpy.ndarray`, :class:`torch.Tensor`,
+    :class:`Sequence`, :class:`int` and :class:`float`.
+
+    Args:
+        data (torch.Tensor | numpy.ndarray | Sequence | int | float): Data to
+            be converted.
+    """
+
+    if isinstance(data, torch.Tensor):
+        return data
+    elif isinstance(data, np.ndarray):
+        return torch.from_numpy(data)
+    elif isinstance(data, Sequence) and not mmcv.is_str(data):
+        return torch.tensor(data)
+    elif isinstance(data, int):
+        return torch.LongTensor([data])
+    elif isinstance(data, float):
+        return torch.FloatTensor([data])
+    else:
+        raise TypeError(f'type {type(data)} cannot be converted to tensor.')
+    
+@ROTATED_PIPELINES.register_module()
+class DefaultFormatBundle_m:
+    """Default formatting bundle.
+
+    It simplifies the pipeline of formatting common fields, including "img",
+    "proposals", "gt_bboxes", "gt_labels", "gt_masks" and "gt_semantic_seg".
+    These fields are formatted as follows.
+
+    - img: (1)transpose, (2)to tensor, (3)to DataContainer (stack=True)
+    - proposals: (1)to tensor, (2)to DataContainer
+    - gt_bboxes: (1)to tensor, (2)to DataContainer
+    - gt_bboxes_ignore: (1)to tensor, (2)to DataContainer
+    - gt_labels: (1)to tensor, (2)to DataContainer
+    - gt_masks: (1)to tensor, (2)to DataContainer (cpu_only=True)
+    - gt_semantic_seg: (1)unsqueeze dim-0 (2)to tensor, \
+                       (3)to DataContainer (stack=True)
+
+    Args:
+        img_to_float (bool): Whether to force the image to be converted to
+            float type. Default: True.
+        pad_val (dict): A dict for padding value in batch collating,
+            the default value is `dict(img=0, masks=0, seg=255)`.
+            Without this argument, the padding value of "gt_semantic_seg"
+            will be set to 0 by default, which should be 255.
+    """
+
+    def __init__(self,
+                 img_to_float=True,
+                 pad_val=dict(img=0, masks=0, seg=255)):
+        self.img_to_float = img_to_float
+        self.pad_val = pad_val
+
+    def __call__(self, results):
+        """Call function to transform and format common fields in results.
+
+        Args:
+            results (dict): Result dict contains the data to convert.
+
+        Returns:
+            dict: The result dict contains the data that is formatted with \
+                default bundle.
+        """
+
+        # if 'img' in results:
+        #     img = results['img']
+        #     if self.img_to_float is True and img.dtype == np.uint8:
+        #         # Normally, image is of uint8 type without normalization.
+        #         # At this time, it needs to be forced to be converted to
+        #         # flot32, otherwise the model training and inference
+        #         # will be wrong. Only used for YOLOX currently .
+        #         img = img.astype(np.float32)
+        #     # add default meta keys
+        #     results = self._add_default_meta_keys(results)
+        #     if len(img.shape) < 3:
+        #         img = np.expand_dims(img, -1)
+        #     img = np.ascontiguousarray(img.transpose(2, 0, 1))
+        #     results['img'] = DC(
+        #         to_tensor(img), padding_value=self.pad_val['img'], stack=True)
+        
+       
+        for i, key in enumerate(results.get('img_fields', ['img'])):
+            results = self._add_default_meta_keys(results, key=key)
+            img = results[key]
+            if len(img.shape) < 3:
+                img = np.expand_dims(img, -1)
+            if self.img_to_float is True and img.dtype == np.uint8:
+                # Normally, image is of uint8 type without normalization.
+                # At this time, it needs to be forced to be converted to
+                # flot32, otherwise the model training and inference
+                # will be wrong. Only used for YOLOX currently .
+                img = img.astype(np.float32)
+            img = np.ascontiguousarray(img.transpose(2, 0, 1))
+            if i == 0:
+                imgs = img
+            else:
+                imgs = np.concatenate((imgs, img), axis=0)
+        #print('imgs', imgs.shape)
+        results['img'] = DC(to_tensor(imgs), padding_value=self.pad_val['img'], stack=True)
+       
+            #imgs.append(results[key])
+        
+        if len(results['img_fields']) == 1:  #single modal
+        
+            results['img'] = results[key]
+        
+        
+        for key in ['proposals', 'gt_bboxes', 'gt_bboxes_ignore', 'gt_labels']:
+            if key not in results:
+                continue
+            results[key] = DC(to_tensor(results[key]))
+        if 'gt_masks' in results:
+            results['gt_masks'] = DC(
+                results['gt_masks'],
+                padding_value=self.pad_val['masks'],
+                cpu_only=True)
+        if 'gt_semantic_seg' in results:
+            results['gt_semantic_seg'] = DC(
+                to_tensor(results['gt_semantic_seg'][None, ...]),
+                padding_value=self.pad_val['seg'],
+                stack=True)
+            
+        
+        return results
+
+    def _add_default_meta_keys(self, results, key='img'):
+        """Add default meta keys.
+
+        We set default meta keys including `pad_shape`, `scale_factor` and
+        `img_norm_cfg` to avoid the case where no `Resize`, `Normalize` and
+        `Pad` are implemented during the whole pipeline.
+
+        Args:
+            results (dict): Result dict contains the data to convert.
+
+        Returns:
+            results (dict): Updated result dict contains the data to convert.
+        """
+        img = results[key]
+        results.setdefault('pad_shape', img.shape)
+        results.setdefault('scale_factor', 1.0)
+        num_channels = 1 if len(img.shape) < 3 else img.shape[2]
+        results.setdefault(
+            'img_norm_cfg',
+            dict(
+                mean=np.zeros(num_channels, dtype=np.float32),
+                std=np.ones(num_channels, dtype=np.float32),
+                to_rgb=False))
+        return results
+
+    def __repr__(self):
+        return self.__class__.__name__ + \
+               f'(img_to_float={self.img_to_float})'
+
+@ROTATED_PIPELINES.register_module() 
+class DefaultFormatBundle_mu:
+    """Default formatting bundle.
+
+    It simplifies the pipeline of formatting common fields, including "img",
+    "proposals", "gt_bboxes", "gt_labels", "gt_masks" and "gt_semantic_seg".
+    These fields are formatted as follows.
+
+    - img: (1)transpose, (2)to tensor, (3)to DataContainer (stack=True)
+    - proposals: (1)to tensor, (2)to DataContainer
+    - gt_bboxes: (1)to tensor, (2)to DataContainer
+    - gt_bboxes_ignore: (1)to tensor, (2)to DataContainer
+    - gt_labels: (1)to tensor, (2)to DataContainer
+    - gt_masks: (1)to tensor, (2)to DataContainer (cpu_only=True)
+    - gt_semantic_seg: (1)unsqueeze dim-0 (2)to tensor, \
+                       (3)to DataContainer (stack=True)
+
+    Args:
+        img_to_float (bool): Whether to force the image to be converted to
+            float type. Default: True.
+        pad_val (dict): A dict for padding value in batch collating,
+            the default value is `dict(img=0, masks=0, seg=255)`.
+            Without this argument, the padding value of "gt_semantic_seg"
+            will be set to 0 by default, which should be 255.
+    """
+
+    def __init__(self,
+                 img_to_float=True,
+                 pad_val=dict(img=0, masks=0, seg=255)):
+        self.img_to_float = img_to_float
+        self.pad_val = pad_val
+
+    def __call__(self, results):
+        """Call function to transform and format common fields in results.
+
+        Args:
+            results (dict): Result dict contains the data to convert.
+
+        Returns:
+            dict: The result dict contains the data that is formatted with \
+                default bundle.
+        """
+
+        # if 'img' in results:
+        #     img = results['img']
+        #     if self.img_to_float is True and img.dtype == np.uint8:
+        #         # Normally, image is of uint8 type without normalization.
+        #         # At this time, it needs to be forced to be converted to
+        #         # flot32, otherwise the model training and inference
+        #         # will be wrong. Only used for YOLOX currently .
+        #         img = img.astype(np.float32)
+        #     # add default meta keys
+        #     results = self._add_default_meta_keys(results)
+        #     if len(img.shape) < 3:
+        #         img = np.expand_dims(img, -1)
+        #     img = np.ascontiguousarray(img.transpose(2, 0, 1))
+        #     results['img'] = DC(
+        #         to_tensor(img), padding_value=self.pad_val['img'], stack=True)
+        
+        imgs = []
+        for key in results.get('img_fields', ['img']):
+            results = self._add_default_meta_keys(results, key=key)
+            img = results[key]
+            if len(img.shape) < 3:
+                img = np.expand_dims(img, -1)
+            if self.img_to_float is True and img.dtype == np.uint8:
+                # Normally, image is of uint8 type without normalization.
+                # At this time, it needs to be forced to be converted to
+                # flot32, otherwise the model training and inference
+                # will be wrong. Only used for YOLOX currently .
+                img = img.astype(np.float32)
+            img = np.ascontiguousarray(img.transpose(2, 0, 1))
+            #print(img.shape)
+            results[key] = DC(to_tensor(img), padding_value=self.pad_val['img'], stack=True)
+            imgs.append(results[key])
+        
+        if len(imgs) == 1:
+            results['img'] = results[key]
+        else:
+            results['img'] = imgs
+
+        for key in ['proposals', 'gt_bboxes', 'gt_bboxes_ignore', 'gt_labels']:
+            if key not in results:
+                continue
+            results[key] = DC(to_tensor(results[key]))
+        if 'gt_masks' in results:
+            results['gt_masks'] = DC(
+                results['gt_masks'],
+                padding_value=self.pad_val['masks'],
+                cpu_only=True)
+        if 'gt_semantic_seg' in results:
+            results['gt_semantic_seg'] = DC(
+                to_tensor(results['gt_semantic_seg'][None, ...]),
+                padding_value=self.pad_val['seg'],
+                stack=True)
+        return results
+
+    def _add_default_meta_keys(self, results, key='img'):
+        """Add default meta keys.
+
+        We set default meta keys including `pad_shape`, `scale_factor` and
+        `img_norm_cfg` to avoid the case where no `Resize`, `Normalize` and
+        `Pad` are implemented during the whole pipeline.
+
+        Args:
+            results (dict): Result dict contains the data to convert.
+
+        Returns:
+            results (dict): Updated result dict contains the data to convert.
+        """
+        img = results[key]
+        results.setdefault('pad_shape', img.shape)
+        results.setdefault('scale_factor', 1.0)
+        num_channels = 1 if len(img.shape) < 3 else img.shape[2]
+        results.setdefault(
+            'img_norm_cfg',
+            dict(
+                mean=np.zeros(num_channels, dtype=np.float32),
+                std=np.ones(num_channels, dtype=np.float32),
+                to_rgb=False))
+        return results
+
+    def __repr__(self):
+        return self.__class__.__name__ + \
+               f'(img_to_float={self.img_to_float})'
