@@ -18,6 +18,37 @@ cd mmrotate
 pip install -v -e .
 ```
 
+## Data Preparation
+### DOTA
+#### 1. Labeled/Unlabeled Data Division
+To divide the DOTA- v1.0/v1.5 dataset into labeled and unlabeled data, please refer to [Data preparation of SOOD
+](https://github.com/HamPerdredes/SOOD).
+
+To divide the DOTA- v2.0 into labeled and unlabeled data, please refer to [data_list/dotav2](https://github.com/123sio/PWOOD/tree/HBox/data_list/dotav2).
+
+#### 2. Data Split
+For details on how to split the DOTA dataset into patches, please refer to the [official implementation](https://github.com/open-mmlab/mmrotate/blob/main/tools/data/dota/README.md) .
+
+After split, the data folder should be organized as follows:
+``` shell
+split_ss_dota_vxx
+├── train
+│   ├── images
+│   └── annfiles
+├── val
+│   ├── images
+│   └── annfiles
+├── train_xx_labeled
+│   ├── images
+│   └── annfiles
+└──train_xx_unlabeled
+    ├── images
+    └── annfiles
+```
+
+### DIOR
+To divide the DIOR into labeled and unlabeled data, please refer to [data_list/dior](https://github.com/123sio/PWOOD/tree/HBox/data_list/dior).
+
 ## Train
 ``` shell
 #2 GPU
