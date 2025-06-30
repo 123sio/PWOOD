@@ -50,6 +50,12 @@ Labeled Data | mAP | Config | Model | Log |
 | 20% | 59.36 | [semi_h2rv2_adamw_dota15_20p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/semi_h2rv2_adamw_dota15_20p.py) | [best_0.593614_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/gmm/best_0.593614_mAP.pth) | [dotav15_20p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/gmm/20250217_202030.log.json) | 
 | 30% | 61.58 | [semi_h2rv2_adamw_dota15_30p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/semi_h2rv2_adamw_dota15_30p.py) | [best_0.615836_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/gmm/30p_lr/best_0.615836_mAP.pth) | - | 
 
+### DOTA- v2.0
+Labeled Data | mAP | Config | Model | Log |
+| :-----------: | :--: |:-----: | :----: | :-----:|
+| 10% | | | | |
+| 20% | | | | |
+| 30% | | | | |
 
 ### DIOR
 Labeled Data | mAP | Config | Model | Log |
