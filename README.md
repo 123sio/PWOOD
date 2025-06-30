@@ -53,9 +53,9 @@ Labeled Data | mAP | Config | Model | Log |
 ### DOTA- v2.0
 Labeled Data | mAP | Config | Model | Log |
 | :-----------: | :--: |:-----: | :----: | :-----:|
-| 10% | | | | |
-| 20% | | | | |
-| 30% | | | | |
+| 10% | 31.30 | [semi_h2rv2_adamw_dota2_10p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/dotav2/semi_h2rv2_adamw_dota2_10p.py)| [best_0.310266_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dotav2/10p/best_0.310266_mAP.pth)| [dotav2_10p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dotav2/10p/20250313_224047.log.json)|
+| 20% | 36.39 | [semi_h2rv2_adamw_dota2_20p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/dotav2/semi_h2rv2_adamw_dota2_20p.py)| [best_0.363926_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dotav2/best_0.363926_mAP.pth) | [dotav2_20p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dotav2/20250304_174131.log.json) |
+| 30% | 40.27 | [semi_h2rv2_adamw_dota2_30p.py](https://github.com/123sio/PWOOD/blob/HBox/configs_dota15/pwood/dotav2/semi_h2rv2_adamw_dota2_30p.py)| [best_0.402659_mAP.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dotav2/30p/pro_data/best_0.402659_mAP.pth) | [dotav2_30p_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_h/PWOOD/dotav2/30p/pro_data/20250321_142715.log.json) |
 
 ### DIOR
 Labeled Data | mAP | Config | Model | Log |
