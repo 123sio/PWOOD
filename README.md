@@ -11,7 +11,7 @@ Labeled Data | mAP | Config | Model | Log |
 ### DOTA-v1.5
  Labeled Data | Unlabeled Data | mAP | Config | Model | Log |
 | :---------: | :-----------: | :----: | :---: | :---: | :---: |
-|train set| val set | - | - | - | - |
+|train set| val set | 43.90(test) | [semi_point2rboxv2_dota15_full.py](https://github.com/123sio/PWOOD/blob/Point/configs_dota15/pwood_p/semi_point2rboxv2_dota15_full.py) | [iter_128000.pth](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_p/pwood_p/p_dotav15/iter_128000.pth) | [dotav15_full_log](https://huggingface.co/Xm4nQ8/weight/blob/main/work_dir_p/pwood_p/p_dotav15/20250614_112924.log.json) |
 
 ### DOTA-v2.0
 Labeled Data | mAP | Config | Model | Log |
