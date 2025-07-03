@@ -13,7 +13,7 @@ mim install mmdet\<3.0.0
 pip install scikit-learn
 pip install prettytable
 
-# For Point & Mix branch
+# For Point branch
 cd mmrotate
 pip install -v -e .
 ```
@@ -97,5 +97,4 @@ Labeled Data | mAP | Config | Model | Log |
 ## Guide 
 If you need Point version, please switch to the [Point branch](https://github.com/123sio/PWOOD/tree/Point).
 
-If you need various label version, please switch to the [Mix branch](https://github.com/123sio/PWOOD/tree/Mix).
 
