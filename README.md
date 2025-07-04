@@ -123,4 +123,18 @@ Labeled Data | mAP | Config | Model | Log |
 ## Guide 
 If you need Point version, please switch to the [Point branch](https://github.com/123sio/PWOOD/tree/Point).
 
+## Citation
+```bibtex
+@misc{liu2025partialweaklysupervisedorientedobject,
+      title={Partial Weakly-Supervised Oriented Object Detection}, 
+      author={Mingxin Liu and Peiyuan Zhang and Yuan Liu and Wei Zhang and Yue Zhou and Ning Liao and Ziyang Gong and Junwei Luo and Zhirui Wang and Yi Yu and Xue Yang},
+      year={2025},
+      eprint={2507.02751},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2507.02751}, 
+}
+
+```
+
 
