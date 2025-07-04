@@ -56,7 +56,7 @@ To divide the DOTA- v2.0 into labeled and unlabeled data, please refer to [data_
 For details on how to split the DOTA dataset into patches, please refer to the [official implementation](https://github.com/open-mmlab/mmrotate/blob/main/tools/data/dota/README.md) .
 
 After split, the data folder should be organized as follows:
-``` shell
+``` 
 split_ss_dota_vxx
 ├── train
 │   ├── images
@@ -76,7 +76,7 @@ split_ss_dota_vxx
 To divide the DIOR into labeled and unlabeled data, please refer to [data_list/dior](https://github.com/123sio/PWOOD/tree/HBox/data_list/dior).
 
 ## Train
-``` shell
+```bash
 #2 GPU
 CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nnodes=1 \
 --node_rank=0 --master_addr="127.0.0.1" --nproc_per_node=2 --master_port=25510 \
@@ -87,7 +87,7 @@ train.py configs_dota15/xxx/xxx.py \
 ```
 
 ## Test
-``` shell
+```bash
 python test.py configs_dota15/xxx/xxx.py work_dir/xxx/xxx.pth 
 ```
 
