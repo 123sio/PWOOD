@@ -1,4 +1,28 @@
-# PWOOD
+
+<p align="center">
+    <h1 align="center">Partial Weakly-Supervised Oriented Object Detection</h1>
+    <p align="center">
+    <a href='' style='text-decoration: none' >Mingxin Liu</a><sup></sup>&ensp;
+    <a href='https://scholar.google.com/citations?user=rQbW67AAAAAJ' style='text-decoration: none' >Peiyuan Zhang</a><sup></sup>&ensp;
+    <a href='' style='text-decoration: none' >Yuan Liu</a><sup></sup>&ensp;
+    <a href='' style='text-decoration: none' >Wei Zhang</a><sup></sup>&ensp;
+    <a href='https://scholar.google.com/citations?user=v-aQ8GsAAAAJ' style='text-decoration: none' >Yue Zhou</a><sup></sup>&ensp;
+    <a href='' style='text-decoration: none' >Ning Liao</a><sup></sup>&ensp;
+    <a href='' style='text-decoration: none' >Ziyang Gong</a><sup></sup>&ensp;
+    <a href='https://scholar.google.com/citations?user=6XibZaYAAAAJ' style='text-decoration: none' >Junwei Luo</a><sup></sup>&ensp;
+    <a href='' style='text-decoration: none' >Zhirui Wang</a><sup></sup>&ensp;
+    <a href='https://scholar.google.com/citations?user=OYtSc4AAAAAJ' style='text-decoration: none' >Yi Yu</a><sup></sup>&ensp;
+    <a href='https://yangxue.site/' style='text-decoration: none' >Xue Yang</a><sup></sup>&ensp;
+    <div align="center">
+      <a href='[https://arxiv.org/abs/2502.04268](https://arxiv.org/abs/2507.02751)'><img src='https://img.shields.io/badge/arXiv-2502.04268-brown.svg?logo=arxiv&logoColor=white'></a>
+     <a href='https://huggingface.co/Xm4nQ8/weight'><img src='https://img.shields.io/badge/HuggingFace-Model-yellow.svg?logo=HuggingFace&logoColor=white'></a>
+	  </div>
+    </div>
+     </p>
+</p>
+
+## Introduction
+We propose the first Partial Weakly-Supervised Oriented Object Detection (PWOOD) framework based on partially weak annotations (horizontal boxes or single points), which can efficiently leverage large amounts of unlabeled data, significantly outperforming weakly supervised algorithms trained with partially weak annotations, and also offers a lower cost solution.
 
 ## Installation
 ``` shell
