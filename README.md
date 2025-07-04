@@ -24,6 +24,8 @@
 ## Introduction
 We propose the first Partial Weakly-Supervised Oriented Object Detection (PWOOD) framework based on partially weak annotations (horizontal boxes or single points), which can efficiently leverage large amounts of unlabeled data, significantly outperforming weakly supervised algorithms trained with partially weak annotations, and also offers a lower cost solution.
 
+<img src="fig/pipline.png" alt="framework" width="100%" />
+
 ## Installation
 ``` shell
 conda create -n mm python==3.8 -y
