@@ -14,7 +14,7 @@
     <a href='https://scholar.google.com/citations?user=OYtSc4AAAAAJ' style='text-decoration: none' >Yi Yu</a><sup></sup>&ensp;
     <a href='https://yangxue.site/' style='text-decoration: none' >Xue Yang</a><sup></sup>&ensp;
     <div align="center">
-      <a href='[https://arxiv.org/abs/2502.04268](https://arxiv.org/abs/2507.02751)'><img src='https://img.shields.io/badge/arXiv-2502.04268-brown.svg?logo=arxiv&logoColor=white'></a>
+      <a href='https://arxiv.org/abs/2507.02751'><img src='https://img.shields.io/badge/arXiv-2502.04268-brown.svg?logo=arxiv&logoColor=white'></a>
      <a href='https://huggingface.co/Xm4nQ8/weight'><img src='https://img.shields.io/badge/HuggingFace-Model-yellow.svg?logo=HuggingFace&logoColor=white'></a>
 	  </div>
     </div>
